@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\Request;
 class PHPCRAPISilexServiceProvider implements ServiceProviderInterface, ControllerProviderInterface
 {
 	public function register(Application $app){
+        $app['phpcr_api.mount_prefix'] = isset($app['phpcr_api.mount_prefix']) ? $app['phpcr_api.mount_prefix'] : '/_api';
 		$app['phpcr_api.repositories_config'] = isset($app['phpcr_api.repositories_config']) ? $app['phpcr_api.repositories_config'] : array();
 		$app['phpcr_api.repository_loader'] = $app->share(function() use ($app){
 			return new RepositoryLoader($app['phpcr_api.repositories_config']);
