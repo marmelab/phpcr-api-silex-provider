@@ -264,9 +264,9 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         return $app->json(sprintf('Workspace %s created', $name));
     }
 
-    public function deleteWorkspaceAction(Session $repository, $workspace, Application $app, Request $request)
+    public function deleteWorkspaceAction(SessionManager $repository, $workspace, Application $app, Request $request)
     {
-        $currentWorkspace = $repository->getWorkspace();
+        $currentWorkspace = $repository->getWorkspaceManager();
         $currentWorkspace->deleteWorkspace($workspace);
        
         return $app->json(sprintf('Workspace %s deleted', $workspace));
