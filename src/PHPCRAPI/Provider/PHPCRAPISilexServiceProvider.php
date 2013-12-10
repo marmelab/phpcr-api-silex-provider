@@ -4,8 +4,10 @@ namespace PHPCRAPI\Provider;
 
 use PHPCRAPI\API\Exception\ExceptionInterface;
 use PHPCRAPI\API\Exception\ResourceNotFoundException;
-use PHPCRAPI\PHPCR\Exception\CollectionUnknownKeyException;
+use PHPCRAPI\API\Manager\RepositoryManager;
+use PHPCRAPI\API\Manager\SessionManager;
 use PHPCRAPI\API\RepositoryLoader;
+use PHPCRAPI\PHPCR\Exception\CollectionUnknownKeyException;
 use Silex\Application;
 use Silex\ServiceProviderInterface;
 use Silex\ControllerProviderInterface;
@@ -18,10 +20,18 @@ class PHPCRAPISilexServiceProvider implements ServiceProviderInterface, Controll
 		$app['phpcr_api.repository_loader'] = $app->share(function() use ($app){
 			return new RepositoryLoader($app['phpcr_api.repositories_config']);
 		});
+
+        $app->error(function (ExceptionInterface $e) use ($app) {
+            return $app->json(
+                ['message' => $e->getMessage()],
+                404 /* ignored */,
+                array('X-Status-Code' => $e->getCode())
+            );
+        });
 	}
 
 	public function connect(Application $app){
-		$sessionManagerConverter = function($repository, Request $request){
+		$sessionManagerConverter = function($repository, Request $request) use($app){
 			if (is_null($repository)) {
             	return null;
         	}
@@ -115,14 +125,6 @@ class PHPCRAPISilexServiceProvider implements ServiceProviderInterface, Controll
                 $request->request->replace(is_array($data) ? $data : array());
             }
         });
-
-        $app->error(function (ExceptionInterface $e) use ($app) {
-            return $app->json(
-                ['message' => $e->getMessage()],
-                404 /* ignored */,
-                array('X-Status-Code' => $e->getCode())
-            );
-        });
 	}
 
 	public function getRepositoriesAction(Application $app)
@@ -177,5 +179,114 @@ class PHPCRAPISilexServiceProvider implements ServiceProviderInterface, Controll
         ksort($data['workspaces']);
         $data['workspaces'] = array_values($data['workspaces']);
         return $app->json($data);
+    }
+
+    public function getWorkspaceAction(SessionManager $repository, $workspace, Application $app)
+    {
+        $repositorySupport = $repository->getFactory()->getSupportedOperations();
+        $workspaceSupport = array();
+
+        foreach($repositorySupport as $support){
+            if(substr($support, 0, strlen('workspace.')) == 'workspace.'){
+                $workspaceSupport[] = $support;
+            }
+        }
+
+        $data = array(
+            'workspace' => array(
+                'name'  =>  $workspace
+            ),
+            'support'    => $workspaceSupport
+        );
+
+        return $app->json($data);
+    }
+
+    public function getNodeAction(SessionManager $repository, $workspace, $path, Application $app, Request $request)
+    {
+        if (!$repository->nodeExists($path)) {
+            throw new ResourceNotFoundException('Unknown node');
+        }
+
+        $repositorySupport = $repository->getFactory()->getSupportedOperations();
+        $nodeSupport = array();
+
+        foreach($repositorySupport as $support){
+            if(substr($support, 0, strlen('node.')) == 'node.'){
+                $nodeSupport[] = $support;
+            }
+        }
+
+        $data = array(
+            'support'   =>  $nodeSupport,
+            'node'      =>  array()
+        );
+
+        $currentNode = $repository->getNode($path);
+
+        if($request->query->has('reducedTree')){
+            $data['node']['reducedTree'] = $currentNode->getReducedTree();
+        }
+
+        $data['node']['name'] = $currentNode->getName();
+        $data['node']['path'] = $currentNode->getPath();
+        $data['node']['repository'] = $repository->getName();
+        $data['node']['workspace'] = $workspace;
+        $data['node']['children'] = array();
+        foreach ($currentNode->getChildren() as $node) {
+            $data['node']['children'][] = array(
+                'name'          =>  $node->getName(),
+                'path'          =>  $node->getPath(),
+                'children'      =>  array(),
+                'hasChildren'   =>  (count($node->getChildren()) > 0)
+            );
+        }
+
+        $data['node']['hasChildren'] = (count($data['node']['children']) > 0);
+
+        if ($currentNode->getPath() != $repository->getRootNode()->getPath()) {
+            $data['node']['parent'] = $currentNode->getParent()->getName();
+        }
+        $data['node']['nodeProperties'] = $currentNode->getPropertiesToArray();
+
+        return $app->json($data);
+    }
+
+    public function createWorkspaceAction(SessionManager $repository, Application $app, Request $request)
+    {
+        $name = $request->request->get('name', null);
+        $srcWorkspace = $request->request->get('srcWorkspace', null);
+
+        $currentWorkspace = $repository->getWorkspaceManager();
+        $currentWorkspace->createWorkspace($name, $srcWorkspace);
+       
+        return $app->json(sprintf('Workspace %s created', $name));
+    }
+
+    public function deleteWorkspaceAction(Session $repository, $workspace, Application $app, Request $request)
+    {
+        $currentWorkspace = $repository->getWorkspace();
+        $currentWorkspace->deleteWorkspace($workspace);
+       
+        return $app->json(sprintf('Workspace %s deleted', $workspace));
+    }
+
+    public function deleteNodePropertyAction(SessionManager $repository, $workspace, $path, $property, Application $app, Request $request)
+    {
+        $currentNode = $repository->getNode($path);
+        $currentNode->removeProperty($property);
+        return $app->json(sprintf('Property %s deleted', $property));
+    }
+
+    public function addNodePropertyAction(SessionManager $repository, $workspace, $path, Application $app, Request $request)
+    {
+        $currentNode = $repository->getNode($path);
+       
+        $name = $request->request->get('name',null);
+        $value = $request->request->get('value',null);
+        $type = $request->request->get('type',null);
+        
+        $currentNode->setProperty($name, $value, $type);
+        return $app->json(sprintf('Property %s added', $name));
     }
 }
