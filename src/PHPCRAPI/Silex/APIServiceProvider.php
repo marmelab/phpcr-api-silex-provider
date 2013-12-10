@@ -12,7 +12,6 @@ use Silex\Application;
 use Silex\ServiceProviderInterface;
 use Silex\ControllerProviderInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Yaml\Parser;
 
 class APIServiceProvider implements ServiceProviderInterface, ControllerProviderInterface
 {
