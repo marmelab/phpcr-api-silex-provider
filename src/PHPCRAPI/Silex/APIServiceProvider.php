@@ -1,6 +1,6 @@
 <?php
 
-namespace PHPCRAPI\Provider;
+namespace PHPCRAPI\Silex;
 
 use PHPCRAPI\API\Exception\ExceptionInterface;
 use PHPCRAPI\API\Exception\ResourceNotFoundException;
@@ -13,7 +13,7 @@ use Silex\ServiceProviderInterface;
 use Silex\ControllerProviderInterface;
 use Symfony\Component\HttpFoundation\Request;
 
-class PHPCRAPISilexServiceProvider implements ServiceProviderInterface, ControllerProviderInterface
+class APIServiceProvider implements ServiceProviderInterface, ControllerProviderInterface
 {
 	public function register(Application $app){
         $app['phpcr_api.mount_prefix'] = isset($app['phpcr_api.mount_prefix']) ? $app['phpcr_api.mount_prefix'] : '/_api';
