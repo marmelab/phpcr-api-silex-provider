@@ -127,7 +127,7 @@ class PHPCRAPISilexServiceProvider implements ServiceProviderInterface, Controll
 
 	public function getRepositoriesAction(Application $app)
     {
-        $repositories = $app['phpcr_api.repositories_loader']->getAll();
+        $repositories = $app['phpcr_api.repository_loader']->getAll();
         $data = array(
             'repositories'  =>  array()
         );
