@@ -10,5 +10,7 @@
 
     "autoload": {
         "psr-0": {"PHPCRAPI\\": "src/"}
-    }
+    },
+
+    "minimum-stability" : "dev"
 }
