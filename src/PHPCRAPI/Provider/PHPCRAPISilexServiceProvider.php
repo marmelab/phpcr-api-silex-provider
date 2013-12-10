@@ -127,7 +127,7 @@ class PHPCRAPISilexServiceProvider implements ServiceProviderInterface, Controll
 
 	public function getRepositoriesAction(Application $app)
     {
-        $repositories = $app['phpcr_api.repository_loader']->getAll();
+        $repositories = $app['phpcr_api.repository_loader']->getRepositories()->getAll();
         $data = array(
             'repositories'  =>  array()
         );
@@ -150,6 +150,32 @@ class PHPCRAPISilexServiceProvider implements ServiceProviderInterface, Controll
                 'factoryName'  =>  $repository->getFactory()->getName()
             )
         );
+        return $app->json($data);
+    }
+
+    public function getWorkspacesAction(SessionManager $repository, Application $app)
+    {
+        $repositorySupport = $repository->getFactory()->getSupportedOperations();
+        $workspaceSupport = array();
+
+        foreach($repositorySupport as $support){
+            if(substr($support, 0, strlen('workspace.')) == 'workspace.'){
+                $workspaceSupport[] = $support;
+            }
+        }
+
+        $data = array(
+            'workspaces' => array(),
+            'support'    => $workspaceSupport
+        );
+
+        foreach ($repository->getWorkspaceManager()->getAccessibleWorkspaceNames() as $workspaceName) {
+            $data['workspaces'][$workspaceName] = array(
+                'name'      =>  $workspaceName
+            );
+        }
+        ksort($data['workspaces']);
+        $data['workspaces'] = array_values($data['workspaces']);
         return $app->json($data);
     }
 }
