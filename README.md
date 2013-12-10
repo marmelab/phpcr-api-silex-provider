@@ -1,7 +1,7 @@
 PHPCR API Silex Provider
 ========================
 
-PHPCR API Silex Provider provides a REST access to [phpcr-api](https://github.com/marmelab/phpcr-api).
+PHPCR API Silex Provider provides a REST access to [marmelab/phpcr-api](https://github.com/marmelab/phpcr-api).
 
 Installation
 ------------
