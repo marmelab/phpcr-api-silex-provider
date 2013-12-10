@@ -11,7 +11,7 @@ use Silex\ServiceProviderInterface;
 use Silex\ControllerProviderInterface;
 use Symfony\Component\HttpFoundation\Request;
 
-class PHPAPISilexServiceProvider implements ServiceProviderInterface, ControllerProviderInterface
+class PHPCRAPISilexServiceProvider implements ServiceProviderInterface, ControllerProviderInterface
 {
 	public function register(Application $app){
 		$app['phpcr_api.repositories_config'] = isset($app['phpcr_api.repositories_config']) ? $app['phpcr_api.repositories_config'] : array();
