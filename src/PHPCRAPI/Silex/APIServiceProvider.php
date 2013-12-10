@@ -12,15 +12,14 @@ use Silex\Application;
 use Silex\ServiceProviderInterface;
 use Silex\ControllerProviderInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Yaml\Parser;
 
 class APIServiceProvider implements ServiceProviderInterface, ControllerProviderInterface
 {
 	public function register(Application $app){
-        $app['phpcr_api.mount_prefix'] = isset($app['phpcr_api.mount_prefix']) ? $app['phpcr_api.mount_prefix'] : '/_api';
-		$app['phpcr_api.repositories_config'] = isset($app['phpcr_api.repositories_config']) ? $app['phpcr_api.repositories_config'] : array();
-		$app['phpcr_api.repository_loader'] = $app->share(function() use ($app){
-			return new RepositoryLoader($app['phpcr_api.repositories_config']);
-		});
+         $app['phpcr_api.mount_prefix'] = isset($app['phpcr_api.mount_prefix']) ? $app['phpcr_api.mount_prefix'] : '/_api';
+        
+        $app['phpcr_api.repositories_config'] = isset($app['phpcr_api.repositories_config']) ? $app['phpcr_api.repositories_config'] : array();
 
         $app->error(function (ExceptionInterface $e) use ($app) {
             return $app->json(
@@ -119,6 +118,10 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
 
 	public function boot(Application $app){
 		$app->mount($app['phpcr_api.mount_prefix'], $this->connect($app));
+       
+        $app['phpcr_api.repository_loader'] = $app->share(function() use ($app){
+            return new RepositoryLoader($app['phpcr_api.repositories_config']);
+        });
 
 		$app->before(function (Request $request) {
             if (0 === strpos($request->headers->get('Content-Type'), 'application/json')) {
