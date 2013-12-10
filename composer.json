@@ -27,5 +27,6 @@
 
     "autoload": {
         "psr-0": {"PHPCRAPI\\Provider\\": ""}
-    }
+    },
+    "target-dir": "PHPCRAPI/Provider"
 }
