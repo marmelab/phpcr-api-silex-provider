@@ -26,6 +26,6 @@
     },
 
     "autoload": {
-        "psr-0": {"PHPCRAPI": "src"}
+        "psr-0": {"PHPCRAPI\\": "src/"}
     }
 }
