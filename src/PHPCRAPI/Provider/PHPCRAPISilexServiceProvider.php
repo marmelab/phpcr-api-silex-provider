@@ -55,6 +55,8 @@ class PHPCRAPISilexServiceProvider implements ServiceProviderInterface, Controll
             }
         };
 
+        $controllers = $app['controllers_factory'];
+
 		 // Get all repositories
         $controllers->get('/repositories', array($this, 'getRepositoriesAction'))
             ->bind('phpcr_api.repositories');
