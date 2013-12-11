@@ -15,9 +15,10 @@ use Symfony\Component\HttpFoundation\Request;
 
 class APIServiceProvider implements ServiceProviderInterface, ControllerProviderInterface
 {
-	public function register(Application $app){
+    public function register(Application $app)
+    {
          $app['phpcr_api.mount_prefix'] = isset($app['phpcr_api.mount_prefix']) ? $app['phpcr_api.mount_prefix'] : '/_api';
-        
+
         $app['phpcr_api.repositories_config'] = isset($app['phpcr_api.repositories_config']) ? $app['phpcr_api.repositories_config'] : array();
 
         $app->error(function (ExceptionInterface $e) use ($app) {
@@ -27,46 +28,47 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
                 array('X-Status-Code' => $e->getCode())
             );
         });
-	}
+    }
 
-	public function connect(Application $app){
-		$sessionManagerConverter = function($repository, Request $request) use($app){
-			if (is_null($repository)) {
-            	return null;
-        	}
-       		$workspace = $request->attributes->has('workspace') ? $request->attributes->get('workspace') : null;
-       
-	        try {
-	        	$repositoryManager = new RepositoryManager(
-	        		$app['phpcr_api.repository_loader']->getRepositories()->get($repository)
-	        	);
+    public function connect(Application $app)
+    {
+        $sessionManagerConverter = function ($repository, Request $request) use ($app) {
+            if (is_null($repository)) {
+                return null;
+            }
+               $workspace = $request->attributes->has('workspace') ? $request->attributes->get('workspace') : null;
 
-	            $sessionManager = $repositoryManager->getSessionManager($workspace);
+            try {
+                $repositoryManager = new RepositoryManager(
+                    $app['phpcr_api.repository_loader']->getRepositories()->get($repository)
+                );
 
-	            if (!is_null($workspace)) {
-	                $path = $request->attributes->get('path');
-	                if (substr($path, 0, 1) != '/') {
-	                    $path = '/'.$path;
-	                }
-	            }
+                $sessionManager = $repositoryManager->getSessionManager($workspace);
 
-	            return $sessionManager;
-	        } catch (CollectionUnknownKeyException $e) {
-	            throw new ResourceNotFoundException('The repository is unknown');
-	        }
-	    };
+                if (!is_null($workspace)) {
+                    $path = $request->attributes->get('path');
+                    if (substr($path, 0, 1) != '/') {
+                        $path = '/'.$path;
+                    }
+                }
 
-	    $pathConverter = function ($path) {
-            if(mb_substr($path,0,1) != '/'){
+                return $sessionManager;
+            } catch (CollectionUnknownKeyException $e) {
+                throw new ResourceNotFoundException('The repository is unknown');
+            }
+        };
+
+        $pathConverter = function ($path) {
+            if (mb_substr($path,0,1) != '/') {
                 return '/'.$path;
-            }else{
+            } else {
                 return $path;
             }
         };
 
         $controllers = $app['controllers_factory'];
 
-		 // Get all repositories
+         // Get all repositories
         $controllers->get('/repositories', array($this, 'getRepositoriesAction'))
             ->bind('phpcr_api.repositories');
 
@@ -113,24 +115,25 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             ->convert('path', $pathConverter);
 
         return $controllers;
-	}
+    }
 
-	public function boot(Application $app){
-		$app->mount($app['phpcr_api.mount_prefix'], $this->connect($app));
-       
-        $app['phpcr_api.repository_loader'] = $app->share(function() use ($app){
+    public function boot(Application $app)
+    {
+        $app->mount($app['phpcr_api.mount_prefix'], $this->connect($app));
+
+        $app['phpcr_api.repository_loader'] = $app->share(function () use ($app) {
             return new RepositoryLoader($app['phpcr_api.repositories_config']);
         });
 
-		$app->before(function (Request $request) {
+        $app->before(function (Request $request) {
             if (0 === strpos($request->headers->get('Content-Type'), 'application/json')) {
                 $data = json_decode($request->getContent(), true);
                 $request->request->replace(is_array($data) ? $data : array());
             }
         });
-	}
+    }
 
-	public function getRepositoriesAction(Application $app)
+    public function getRepositoriesAction(Application $app)
     {
         $repositories = $app['phpcr_api.repository_loader']->getRepositories()->getAll();
         $data = array(
@@ -155,6 +158,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
                 'factoryName'  =>  $repository->getFactory()->getName()
             )
         );
+
         return $app->json($data);
     }
 
@@ -163,8 +167,8 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         $repositorySupport = $repository->getFactory()->getSupportedOperations();
         $workspaceSupport = array();
 
-        foreach($repositorySupport as $support){
-            if(substr($support, 0, strlen('workspace.')) == 'workspace.'){
+        foreach ($repositorySupport as $support) {
+            if (substr($support, 0, strlen('workspace.')) == 'workspace.') {
                 $workspaceSupport[] = $support;
             }
         }
@@ -181,6 +185,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         }
         ksort($data['workspaces']);
         $data['workspaces'] = array_values($data['workspaces']);
+
         return $app->json($data);
     }
 
@@ -189,8 +194,8 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         $repositorySupport = $repository->getFactory()->getSupportedOperations();
         $workspaceSupport = array();
 
-        foreach($repositorySupport as $support){
-            if(substr($support, 0, strlen('workspace.')) == 'workspace.'){
+        foreach ($repositorySupport as $support) {
+            if (substr($support, 0, strlen('workspace.')) == 'workspace.') {
                 $workspaceSupport[] = $support;
             }
         }
@@ -214,8 +219,8 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         $repositorySupport = $repository->getFactory()->getSupportedOperations();
         $nodeSupport = array();
 
-        foreach($repositorySupport as $support){
-            if(substr($support, 0, strlen('node.')) == 'node.'){
+        foreach ($repositorySupport as $support) {
+            if (substr($support, 0, strlen('node.')) == 'node.') {
                 $nodeSupport[] = $support;
             }
         }
@@ -227,7 +232,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
 
         $currentNode = $repository->getNode($path);
 
-        if($request->query->has('reducedTree')){
+        if ($request->query->has('reducedTree')) {
             $data['node']['reducedTree'] = $currentNode->getReducedTree();
         }
 
@@ -262,7 +267,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
 
         $currentWorkspace = $repository->getWorkspaceManager();
         $currentWorkspace->createWorkspace($name, $srcWorkspace);
-       
+
         return $app->json(sprintf('Workspace %s created', $name));
     }
 
@@ -270,7 +275,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
     {
         $currentWorkspace = $repository->getWorkspaceManager();
         $currentWorkspace->deleteWorkspace($workspace);
-       
+
         return $app->json(sprintf('Workspace %s deleted', $workspace));
     }
 
@@ -278,18 +283,20 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
     {
         $currentNode = $repository->getNode($path);
         $currentNode->removeProperty($property);
+
         return $app->json(sprintf('Property %s deleted', $property));
     }
 
     public function addNodePropertyAction(SessionManager $repository, $workspace, $path, Application $app, Request $request)
     {
         $currentNode = $repository->getNode($path);
-       
+
         $name = $request->request->get('name',null);
         $value = $request->request->get('value',null);
         $type = $request->request->get('type',null);
-        
+
         $currentNode->setProperty($name, $value, $type);
+
         return $app->json(sprintf('Property %s added', $name));
     }
 }
