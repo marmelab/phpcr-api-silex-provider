@@ -207,6 +207,10 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             'support'    => $workspaceSupport
         );
 
+        if ($request->query->has('repositories')) {
+            $data['repositories'] = array_keys($app['phpcr_api.repository_loader']->getRepositories()->getAll());
+        }
+        
         return $app->json($data);
     }
 
@@ -257,6 +261,13 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         }
         $data['node']['nodeProperties'] = $currentNode->getPropertiesToArray();
 
+        if ($request->query->has('repositories')) {
+            $data['repositories'] = array_keys($app['phpcr_api.repository_loader']->getRepositories()->getAll());
+        }
+
+        if ($request->query->has('workspaces')) {
+            $data['workspaces'] = $repository->getWorkspaceManager()->getAccessibleWorkspaceNames();
+        }
         return $app->json($data);
     }
 
