@@ -162,7 +162,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         return $app->json($data);
     }
 
-    public function getWorkspacesAction(SessionManager $repository, Application $app)
+    public function getWorkspacesAction(SessionManager $repository, Application $app, Request $request)
     {
         $repositorySupport = $repository->getFactory()->getSupportedOperations();
         $workspaceSupport = array();
