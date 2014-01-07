@@ -3,6 +3,7 @@
 namespace PHPCRAPI\Silex;
 
 use PHPCRAPI\API\Exception\ExceptionInterface;
+use PHPCRAPI\API\Exception\NotSupportedOperationException;
 use PHPCRAPI\API\Exception\ResourceNotFoundException;
 use PHPCRAPI\API\Manager\RepositoryManager;
 use PHPCRAPI\API\Manager\SessionManager;
@@ -101,6 +102,14 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         // Delete a workspace from a repository
         $controllers->delete('/repositories/{repository}/workspaces/{workspace}', array($this, 'deleteWorkspaceAction'))
             ->convert('repository', $sessionManagerConverter);
+
+        // Update a node in a workspace
+        $controllers->put('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'updateNodeAction'))
+            ->assert('path', '.*')
+            ->convert('repository', $sessionManagerConverter)
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.node');
+
 
          // Add a property in a node
         $controllers->post('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'addNodePropertyAction'))
@@ -309,5 +318,37 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         $currentNode->setProperty($name, $value, $type);
 
         return $app->json(sprintf('Property %s added', $name));
+    }
+
+    public function updateNodeAction(SessionManager $repository, $workspace, $path, Application $app, Request $request)
+    {
+        if (!$repository->nodeExists($path)) {
+            throw new ResourceNotFoundException('Unknown node');
+        }
+
+        $currentNode = $repository->getNode($path);
+
+        $method = $request->request->get('method',null);
+        $output = sprintf('Node %s updated', $path);
+
+        switch($method){
+            default:
+                throw new NotSupportedOperationException('Unknown edit method');
+                break;
+
+            case 'rename':
+                $name = $request->request->get('newName', null);
+                $currentNode->rename($name);
+                $output = sprintf('Node %s renamed', $path);
+                break;
+
+            case 'move':
+                $destAbsPath = $request->request->get('destAbsPath', null);
+                $repository->move($path, $destAbsPath);
+                $output = sprintf('Node %s moved', $path);
+                break;
+        }
+
+        return $app->json($output);
     }
 }
