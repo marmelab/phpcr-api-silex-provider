@@ -110,6 +110,19 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             ->convert('path', $pathConverter)
             ->bind('phpcr_api.node');
 
+        // Update a node in a workspace
+        $controllers->delete('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'deleteNodeAction'))
+            ->assert('path', '.*')
+            ->convert('repository', $sessionManagerConverter)
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.node');
+
+        // Add a node to a node
+        $controllers->add('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'addNodeAction'))
+            ->assert('path', '.*')
+            ->convert('repository', $sessionManagerConverter)
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.node');
 
          // Add a property in a node
         $controllers->post('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'addNodePropertyAction'))
@@ -350,5 +363,33 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         }
 
         return $app->json($output);
+    }
+
+    public function deleteNodeAction(SessionManager $repository, $workspace, $path, Application $app, Request $request)
+    {
+        if (!$repository->nodeExists($path)) {
+            throw new ResourceNotFoundException('Unknown node');
+        }
+
+        $currentNode = $repository->getNode($path);
+        $currentNode->remove();
+
+        return $app->json(sprintf('Node %s removed', $path));
+    }
+
+    public function addNodeAction(SessionManager $repository, $workspace, $path, Application $app, Request $request)
+    {
+        if (!$repository->nodeExists($path)) {
+            throw new ResourceNotFoundException('Unknown node');
+        }
+
+        $currentNode = $repository->getNode($path);
+        
+        $relPath = $request->request->get('relPath',null);
+        $primaryNodeTypeName = $request->request->get('primaryNodeTypeName', null);
+
+        $currentNode->addNode($relPath, $primaryNodeTypeName);
+
+        return $app->json(sprintf('Node %s added to %s', $relPath, $path));
     }
 }
