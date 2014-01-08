@@ -83,22 +83,16 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             ->convert('repository', $sessionManagerConverter)
             ->bind('phpcr_api.workspaces');
 
+        // Add a workspace in a repository
+        $controllers->post('/repositories/{repository}/workspaces', array($this, 'createWorkspaceAction'))
+            ->convert('repository', $sessionManagerConverter);
+
         // Get a workspace
         $controllers->get('/repositories/{repository}/workspaces/{workspace}', array($this, 'getWorkspaceAction'))
             ->convert('repository', $sessionManagerConverter)
             ->bind('phpcr_api.workspace');
 
-        // Get a node in a workspace
-        $controllers->get('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'getNodeAction'))
-            ->assert('path', '.*')
-            ->convert('repository', $sessionManagerConverter)
-            ->convert('path', $pathConverter)
-            ->bind('phpcr_api.node');
-
-        // Add a workspace in a repository
-        $controllers->post('/repositories/{repository}/workspaces', array($this, 'createWorkspaceAction'))
-            ->convert('repository', $sessionManagerConverter);
-
+       
         // Delete a workspace from a repository
         $controllers->delete('/repositories/{repository}/workspaces/{workspace}', array($this, 'deleteWorkspaceAction'))
             ->convert('repository', $sessionManagerConverter);
@@ -124,14 +118,21 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             ->convert('path', $pathConverter)
             ->bind('phpcr_api.node');
 
+         // Get a node in a workspace
+        $controllers->get('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'getNodeAction'))
+            ->assert('path', '.*')
+            ->convert('repository', $sessionManagerConverter)
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.node');
+
          // Add a property in a node
-        $controllers->post('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'addNodePropertyAction'))
+        $controllers->post('/repositories/{repository}/workspaces/{workspace}/nodes{path}@properties', array($this, 'addNodePropertyAction'))
             ->assert('path', '.*')
             ->convert('repository', $sessionManagerConverter)
             ->convert('path', $pathConverter);
 
         // Delete a property from a node
-        $controllers->delete('/repositories/{repository}/workspaces/{workspace}/nodes{path}@{property}', array($this, 'deleteNodePropertyAction'))
+        $controllers->delete('/repositories/{repository}/workspaces/{workspace}/nodes{path}@properties/{property}', array($this, 'deleteNodePropertyAction'))
             ->assert('path', '.*')
             ->convert('repository', $sessionManagerConverter)
             ->convert('path', $pathConverter);
