@@ -118,7 +118,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             ->bind('phpcr_api.node');
 
         // Add a node to a node
-        $controllers->add('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'addNodeAction'))
+        $controllers->post('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'addNodeAction'))
             ->assert('path', '.*')
             ->convert('repository', $sessionManagerConverter)
             ->convert('path', $pathConverter)
