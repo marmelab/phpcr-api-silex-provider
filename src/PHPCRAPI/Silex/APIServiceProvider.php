@@ -71,17 +71,17 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
 
          // Get all repositories
         $controllers->get('/repositories', array($this, 'getRepositoriesAction'))
-            ->bind('phpcr_api.repositories');
+            ->bind('phpcr_api.get_repositories');
 
         // Get a repository
         $controllers->get('/repositories/{repository}', array($this, 'getRepositoryAction'))
             ->convert('repository', $sessionManagerConverter)
-            ->bind('phpcr_api.repository');
+            ->bind('phpcr_api.get_repository');
 
         // Get all workspace in a repository
         $controllers->get('/repositories/{repository}/workspaces', array($this, 'getWorkspacesAction'))
             ->convert('repository', $sessionManagerConverter)
-            ->bind('phpcr_api.workspaces');
+            ->bind('phpcr_api.get_workspaces');
 
         // Add a workspace in a repository
         $controllers->post('/repositories/{repository}/workspaces', array($this, 'createWorkspaceAction'))
@@ -90,52 +90,55 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         // Get a workspace
         $controllers->get('/repositories/{repository}/workspaces/{workspace}', array($this, 'getWorkspaceAction'))
             ->convert('repository', $sessionManagerConverter)
-            ->bind('phpcr_api.workspace');
+            ->bind('phpcr_api.get_workspace');
 
-       
         // Delete a workspace from a repository
         $controllers->delete('/repositories/{repository}/workspaces/{workspace}', array($this, 'deleteWorkspaceAction'))
-            ->convert('repository', $sessionManagerConverter);
-
-        // Update a node in a workspace
-        $controllers->put('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'updateNodeAction'))
-            ->assert('path', '.*')
             ->convert('repository', $sessionManagerConverter)
-            ->convert('path', $pathConverter)
-            ->bind('phpcr_api.node');
-
-        // Update a node in a workspace
-        $controllers->delete('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'deleteNodeAction'))
-            ->assert('path', '.*')
-            ->convert('repository', $sessionManagerConverter)
-            ->convert('path', $pathConverter)
-            ->bind('phpcr_api.node');
-
-        // Add a node to a node
-        $controllers->post('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'addNodeAction'))
-            ->assert('path', '.*')
-            ->convert('repository', $sessionManagerConverter)
-            ->convert('path', $pathConverter)
-            ->bind('phpcr_api.node');
+            ->bind('phpcr_api.delete_workspace');
 
          // Get a node in a workspace
         $controllers->get('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'getNodeAction'))
             ->assert('path', '.*')
             ->convert('repository', $sessionManagerConverter)
             ->convert('path', $pathConverter)
-            ->bind('phpcr_api.node');
+            ->bind('phpcr_api.get_node');
 
-         // Add a property in a node
+        // delete a node in a workspace
+        $controllers->delete('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'deleteNodeAction'))
+            ->assert('path', '.*')
+            ->convert('repository', $sessionManagerConverter)
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.delete_node');
+
+        // Add a node to a node
+        $controllers->post('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'addNodeAction'))
+            ->assert('path', '.*')
+            ->convert('repository', $sessionManagerConverter)
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.add_node');
+
+        // Update a node in a workspace
+        $controllers->put('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'updateNodeAction'))
+            ->assert('path', '.*')
+            ->convert('repository', $sessionManagerConverter)
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.update_node');
+
+
+        // Add a property in a node
         $controllers->post('/repositories/{repository}/workspaces/{workspace}/nodes{path}@properties', array($this, 'addNodePropertyAction'))
             ->assert('path', '.*')
             ->convert('repository', $sessionManagerConverter)
-            ->convert('path', $pathConverter);
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.add_property');
 
         // Delete a property from a node
         $controllers->delete('/repositories/{repository}/workspaces/{workspace}/nodes{path}@properties/{property}', array($this, 'deleteNodePropertyAction'))
             ->assert('path', '.*')
             ->convert('repository', $sessionManagerConverter)
-            ->convert('path', $pathConverter);
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.delete_property');
 
         return $controllers;
     }
@@ -385,7 +388,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         }
 
         $currentNode = $repository->getNode($path);
-        
+
         $relPath = $request->request->get('relPath',null);
         $primaryNodeTypeName = $request->request->get('primaryNodeTypeName', null);
 

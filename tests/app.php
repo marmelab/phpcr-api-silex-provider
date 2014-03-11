@@ -2,6 +2,7 @@
 
 use PHPCRAPI\Silex\APIServiceProvider;
 use Silex\Application;
+use Silex\Provider\UrlGeneratorServiceProvider;
 use Silex\Application\UrlGeneratorTrait;
 use Silex\WebTestCase;
 
@@ -12,7 +13,9 @@ class AppTest extends Application
 
 $app = new AppTest();
 
-$app['debug'] = true;
+$app->register(new UrlGeneratorServiceProvider());
+
+//$app['debug'] = true;
 $app['exception_handler']->disable();
 
 $app->register(new APIServiceProvider(),array(
