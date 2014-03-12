@@ -285,7 +285,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         if ($currentNode->getPath() != $repository->getRootNode()->getPath()) {
             $data['node']['parent'] = $currentNode->getParent()->getName();
         }
-        $data['node']['nodeProperties'] = $currentNode->getPropertiesToArray();
+        $data['node']['properties'] = $currentNode->getPropertiesToArray();
 
         if ($request->query->has('repositories')) {
             $data['repositories'] = array_keys($app['phpcr_api.repository_loader']->getRepositories()->getAll());
