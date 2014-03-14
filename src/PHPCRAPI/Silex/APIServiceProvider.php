@@ -97,6 +97,20 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             ->convert('repository', $sessionManagerConverter)
             ->bind('phpcr_api.delete_workspace');
 
+        // Add a property in a node
+        $controllers->post('/repositories/{repository}/workspaces/{workspace}/nodes{path}@properties', array($this, 'addNodePropertyAction'))
+            ->assert('path', '.*')
+            ->convert('repository', $sessionManagerConverter)
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.add_property');
+
+        // Delete a property from a node
+        $controllers->delete('/repositories/{repository}/workspaces/{workspace}/nodes{path}@properties/{property}', array($this, 'deleteNodePropertyAction'))
+            ->assert('path', '.*')
+            ->convert('repository', $sessionManagerConverter)
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.delete_property');
+
          // Get a node in a workspace
         $controllers->get('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'getNodeAction'))
             ->assert('path', '.*')
@@ -124,21 +138,6 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             ->convert('repository', $sessionManagerConverter)
             ->convert('path', $pathConverter)
             ->bind('phpcr_api.update_node');
-
-
-        // Add a property in a node
-        $controllers->post('/repositories/{repository}/workspaces/{workspace}/nodes{path}@properties', array($this, 'addNodePropertyAction'))
-            ->assert('path', '.*')
-            ->convert('repository', $sessionManagerConverter)
-            ->convert('path', $pathConverter)
-            ->bind('phpcr_api.add_property');
-
-        // Delete a property from a node
-        $controllers->delete('/repositories/{repository}/workspaces/{workspace}/nodes{path}@properties/{property}', array($this, 'deleteNodePropertyAction'))
-            ->assert('path', '.*')
-            ->convert('repository', $sessionManagerConverter)
-            ->convert('path', $pathConverter)
-            ->bind('phpcr_api.delete_property');
 
         return $controllers;
     }
