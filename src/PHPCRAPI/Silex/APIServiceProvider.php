@@ -161,12 +161,10 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
     public function getRepositoriesAction(Application $app)
     {
         $repositories = $app['phpcr_api.repository_loader']->getRepositories()->getAll();
-        $data = array(
-            'repositories'  =>  array()
-        );
+        $data = array();
 
         foreach ($repositories as $repository) {
-            $data['repositories'][] = array(
+            $data[] = array(
                 'name'          =>  $repository->getName(),
                 'factoryName'   =>  $repository->getFactory()->getName(),
                 'support'       =>  $repository->getFactory()->getSupportedOperations()
@@ -194,21 +192,15 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
     {
         $repositorySupport = $repository->getFactory()->getSupportedOperations();
 
-        $data = array(
-            'workspaces' => array()
-        );
+        $data = array();
 
         foreach ($repository->getWorkspaceManager()->getAccessibleWorkspaceNames() as $workspaceName) {
-            $data['workspaces'][$workspaceName] = array(
+            $data[$workspaceName] = array(
                 'name'      =>  $workspaceName
             );
         }
-        ksort($data['workspaces']);
-        $data['workspaces'] = array_values($data['workspaces']);
-
-        if ($request->query->has('repositories')) {
-            $data['repositories'] = array_keys($app['phpcr_api.repository_loader']->getRepositories()->getAll());
-        }
+        ksort($data);
+        $data = array_values($data);
 
         return $this->jsonCache($app, $data, 60);
     }
