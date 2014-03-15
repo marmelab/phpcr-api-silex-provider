@@ -298,7 +298,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
 
         $currentNode = $repository->getNode($path);
 
-        $method = $request->request->get('method',null);
+        $method = $request->query->get('method',null);
         $output = sprintf('Node %s updated', $path);
 
         switch($method){
@@ -307,13 +307,13 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
                 break;
 
             case 'rename':
-                $name = $request->request->get('newName', null);
+                $name = $request->query->get('newName', null);
                 $currentNode->rename($name);
                 $output = sprintf('Node %s renamed', $path);
                 break;
 
             case 'move':
-                $destAbsPath = $request->request->get('destAbsPath', null);
+                $destAbsPath = $request->query->get('destAbsPath', null);
                 $repository->move($path, $destAbsPath);
                 $output = sprintf('Node %s moved', $path);
                 break;
