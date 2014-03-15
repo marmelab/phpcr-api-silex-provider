@@ -168,7 +168,9 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         foreach ($repositories as $repository) {
             $data['repositories'][] = array(
                 'name'          =>  $repository->getName(),
-                'factoryName'  =>  $repository->getFactory()->getName()
+                'factoryName'   =>  $repository->getFactory()->getName(),
+                'support'       =>  $repository->getFactory()->getSupportedOperations()
+
             );
         }
 
@@ -180,7 +182,8 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         $data = array(
             'repository'    =>  array(
                 'name'          =>  $repository->getName(),
-                'factoryName'  =>  $repository->getFactory()->getName()
+                'factoryName'  =>  $repository->getFactory()->getName(),
+                'support'       =>  $repository->getFactory()->getSupportedOperations()
             )
         );
 
@@ -190,17 +193,9 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
     public function getWorkspacesAction(SessionManager $repository, Application $app, Request $request)
     {
         $repositorySupport = $repository->getFactory()->getSupportedOperations();
-        $workspaceSupport = array();
-
-        foreach ($repositorySupport as $support) {
-            if (substr($support, 0, strlen('workspace.')) == 'workspace.') {
-                $workspaceSupport[] = $support;
-            }
-        }
 
         $data = array(
-            'workspaces' => array(),
-            'support'    => $workspaceSupport
+            'workspaces' => array()
         );
 
         foreach ($repository->getWorkspaceManager()->getAccessibleWorkspaceNames() as $workspaceName) {
@@ -220,20 +215,10 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
 
     public function getWorkspaceAction(SessionManager $repository, $workspace, Application $app)
     {
-        $repositorySupport = $repository->getFactory()->getSupportedOperations();
-        $workspaceSupport = array();
-
-        foreach ($repositorySupport as $support) {
-            if (substr($support, 0, strlen('workspace.')) == 'workspace.') {
-                $workspaceSupport[] = $support;
-            }
-        }
-
         $data = array(
             'workspace' => array(
                 'name'  =>  $workspace
-            ),
-            'support'    => $workspaceSupport
+            )
         );
 
         return $app->json($data);
