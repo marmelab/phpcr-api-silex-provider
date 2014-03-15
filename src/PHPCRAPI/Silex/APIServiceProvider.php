@@ -178,11 +178,9 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
     public function getRepositoryAction(SessionManager $repository, Application $app)
     {
         $data = array(
-            'repository'    =>  array(
-                'name'          =>  $repository->getName(),
-                'factoryName'  =>  $repository->getFactory()->getName(),
-                'support'       =>  $repository->getFactory()->getSupportedOperations()
-            )
+            'name'          =>  $repository->getName(),
+            'factoryName'  =>  $repository->getFactory()->getName(),
+            'support'       =>  $repository->getFactory()->getSupportedOperations()
         );
 
         return $this->jsonCache($app, $data, 60);
@@ -208,9 +206,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
     public function getWorkspaceAction(SessionManager $repository, $workspace, Application $app)
     {
         $data = array(
-            'workspace' => array(
-                'name'  =>  $workspace
-            )
+            'name'  =>  $workspace
         );
 
         return $this->jsonCache($app, $data, 60);
@@ -222,33 +218,21 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             throw new ResourceNotFoundException('Unknown node');
         }
 
-        $repositorySupport = $repository->getFactory()->getSupportedOperations();
-        $nodeSupport = array();
-
-        foreach ($repositorySupport as $support) {
-            if (substr($support, 0, strlen('node.')) == 'node.') {
-                $nodeSupport[] = $support;
-            }
-        }
-
-        $data = array(
-            'support'   =>  $nodeSupport,
-            'node'      =>  array()
-        );
+        $data = array();
 
         $currentNode = $repository->getNode($path);
 
         if ($request->query->has('reducedTree')) {
-            $data['node']['reducedTree'] = $currentNode->getReducedTree();
+            $data['reducedTree'] = $currentNode->getReducedTree();
         }
 
-        $data['node']['name'] = $currentNode->getName();
-        $data['node']['path'] = $currentNode->getPath();
-        $data['node']['repository'] = $repository->getName();
-        $data['node']['workspace'] = $workspace;
-        $data['node']['children'] = array();
+        $data['name'] = $currentNode->getName();
+        $data['path'] = $currentNode->getPath();
+        $data['repository'] = $repository->getName();
+        $data['workspace'] = $workspace;
+        $data['children'] = array();
         foreach ($currentNode->getChildren() as $node) {
-            $data['node']['children'][] = array(
+            $data['children'][] = array(
                 'name'          =>  $node->getName(),
                 'path'          =>  $node->getPath(),
                 'children'      =>  array(),
@@ -256,20 +240,13 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             );
         }
 
-        $data['node']['hasChildren'] = (count($data['node']['children']) > 0);
+        $data['hasChildren'] = (count($data['children']) > 0);
 
         if ($currentNode->getPath() != $repository->getRootNode()->getPath()) {
-            $data['node']['parent'] = $currentNode->getParent()->getName();
+            $data['parent'] = $currentNode->getParent()->getName();
         }
-        $data['node']['properties'] = $currentNode->getPropertiesToArray();
+        $data['properties'] = $currentNode->getPropertiesToArray();
 
-        if ($request->query->has('repositories')) {
-            $data['repositories'] = array_keys($app['phpcr_api.repository_loader']->getRepositories()->getAll());
-        }
-
-        if ($request->query->has('workspaces')) {
-            $data['workspaces'] = $repository->getWorkspaceManager()->getAccessibleWorkspaceNames();
-        }
         return $this->jsonCache($app, $data, 60);
     }
 
