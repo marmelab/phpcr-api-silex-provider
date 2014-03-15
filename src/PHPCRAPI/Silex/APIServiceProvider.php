@@ -174,7 +174,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             );
         }
 
-        return $app->json($data);
+        return $this->jsonCache($app, $data, 60);
     }
 
     public function getRepositoryAction(SessionManager $repository, Application $app)
@@ -187,7 +187,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             )
         );
 
-        return $app->json($data);
+        return $this->jsonCache($app, $data, 60);
     }
 
     public function getWorkspacesAction(SessionManager $repository, Application $app, Request $request)
@@ -210,7 +210,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             $data['repositories'] = array_keys($app['phpcr_api.repository_loader']->getRepositories()->getAll());
         }
 
-        return $app->json($data);
+        return $this->jsonCache($app, $data, 60);
     }
 
     public function getWorkspaceAction(SessionManager $repository, $workspace, Application $app)
@@ -221,7 +221,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             )
         );
 
-        return $app->json($data);
+        return $this->jsonCache($app, $data, 60);
     }
 
     public function getNodeAction(SessionManager $repository, $workspace, $path, Application $app, Request $request)
@@ -278,7 +278,7 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         if ($request->query->has('workspaces')) {
             $data['workspaces'] = $repository->getWorkspaceManager()->getAccessibleWorkspaceNames();
         }
-        return $app->json($data);
+        return $this->jsonCache($app, $data, 60);
     }
 
     public function createWorkspaceAction(SessionManager $repository, Application $app, Request $request)
@@ -379,5 +379,10 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         $currentNode->addNode($relPath, $primaryNodeTypeName);
 
         return $app->json(sprintf('Node %s added to %s', $relPath, $path));
+    }
+
+    private function jsonCache(Application $app, $json, $max = 60)
+    {
+        return $app->json($json, 200, array('Cache-Control' => sprintf('s-maxage=%s, public, must-revalidate', $max)));
     }
 }
