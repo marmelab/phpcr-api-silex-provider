@@ -2,7 +2,7 @@
     "name": "marmelab/phpcr-api-silex-provider",
     "description": "PHPCR API Silex Provider exposes in REST marmelab/phpcr-api",
     "license": "MIT",
-    "version": "1.0",
+    "version": "0.1",
     "require": {
         "silex/silex": "~1.1.2",
         "symfony/browser-kit": ">=2.3,<2.4-dev",
