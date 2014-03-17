@@ -284,6 +284,9 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         $name = $request->request->get('name',null);
         $value = $request->request->get('value',null);
         $type = $request->request->get('type',null);
+        $properties = $currentNode->getPropertiesToArray();
+
+        if (is_array($properties[$name]['value'])) { $value = json_decode($value, true); }
 
         $currentNode->setProperty($name, $value, $type);
 
