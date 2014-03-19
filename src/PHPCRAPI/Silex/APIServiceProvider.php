@@ -3,6 +3,7 @@
 namespace PHPCRAPI\Silex;
 
 use PHPCRAPI\API\Exception\ExceptionInterface;
+use PHPCRAPI\API\Exception\NotSupportedOperationException;
 use PHPCRAPI\API\Exception\ResourceNotFoundException;
 use PHPCRAPI\API\Manager\RepositoryManager;
 use PHPCRAPI\API\Manager\SessionManager;
@@ -70,49 +71,73 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
 
          // Get all repositories
         $controllers->get('/repositories', array($this, 'getRepositoriesAction'))
-            ->bind('phpcr_api.repositories');
+            ->bind('phpcr_api.get_repositories');
 
         // Get a repository
         $controllers->get('/repositories/{repository}', array($this, 'getRepositoryAction'))
             ->convert('repository', $sessionManagerConverter)
-            ->bind('phpcr_api.repository');
+            ->bind('phpcr_api.get_repository');
 
         // Get all workspace in a repository
         $controllers->get('/repositories/{repository}/workspaces', array($this, 'getWorkspacesAction'))
             ->convert('repository', $sessionManagerConverter)
-            ->bind('phpcr_api.workspaces');
-
-        // Get a workspace
-        $controllers->get('/repositories/{repository}/workspaces/{workspace}', array($this, 'getWorkspaceAction'))
-            ->convert('repository', $sessionManagerConverter)
-            ->bind('phpcr_api.workspace');
-
-        // Get a node in a workspace
-        $controllers->get('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'getNodeAction'))
-            ->assert('path', '.*')
-            ->convert('repository', $sessionManagerConverter)
-            ->convert('path', $pathConverter)
-            ->bind('phpcr_api.node');
+            ->bind('phpcr_api.get_workspaces');
 
         // Add a workspace in a repository
         $controllers->post('/repositories/{repository}/workspaces', array($this, 'createWorkspaceAction'))
             ->convert('repository', $sessionManagerConverter);
 
+        // Get a workspace
+        $controllers->get('/repositories/{repository}/workspaces/{workspace}', array($this, 'getWorkspaceAction'))
+            ->convert('repository', $sessionManagerConverter)
+            ->bind('phpcr_api.get_workspace');
+
         // Delete a workspace from a repository
         $controllers->delete('/repositories/{repository}/workspaces/{workspace}', array($this, 'deleteWorkspaceAction'))
-            ->convert('repository', $sessionManagerConverter);
+            ->convert('repository', $sessionManagerConverter)
+            ->bind('phpcr_api.delete_workspace');
 
-         // Add a property in a node
-        $controllers->post('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'addNodePropertyAction'))
+        // Add a property in a node
+        $controllers->post('/repositories/{repository}/workspaces/{workspace}/nodes{path}@properties', array($this, 'addNodePropertyAction'))
             ->assert('path', '.*')
             ->convert('repository', $sessionManagerConverter)
-            ->convert('path', $pathConverter);
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.add_property');
 
         // Delete a property from a node
-        $controllers->delete('/repositories/{repository}/workspaces/{workspace}/nodes{path}@{property}', array($this, 'deleteNodePropertyAction'))
+        $controllers->delete('/repositories/{repository}/workspaces/{workspace}/nodes{path}@properties/{property}', array($this, 'deleteNodePropertyAction'))
             ->assert('path', '.*')
             ->convert('repository', $sessionManagerConverter)
-            ->convert('path', $pathConverter);
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.delete_property');
+
+         // Get a node in a workspace
+        $controllers->get('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'getNodeAction'))
+            ->assert('path', '.*')
+            ->convert('repository', $sessionManagerConverter)
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.get_node');
+
+        // delete a node in a workspace
+        $controllers->delete('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'deleteNodeAction'))
+            ->assert('path', '.*')
+            ->convert('repository', $sessionManagerConverter)
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.delete_node');
+
+        // Add a node to a node
+        $controllers->post('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'addNodeAction'))
+            ->assert('path', '.*')
+            ->convert('repository', $sessionManagerConverter)
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.add_node');
+
+        // Update a node in a workspace
+        $controllers->put('/repositories/{repository}/workspaces/{workspace}/nodes{path}', array($this, 'updateNodeAction'))
+            ->assert('path', '.*')
+            ->convert('repository', $sessionManagerConverter)
+            ->convert('path', $pathConverter)
+            ->bind('phpcr_api.update_node');
 
         return $controllers;
     }
@@ -136,82 +161,55 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
     public function getRepositoriesAction(Application $app)
     {
         $repositories = $app['phpcr_api.repository_loader']->getRepositories()->getAll();
-        $data = array(
-            'repositories'  =>  array()
-        );
+        $data = array();
 
         foreach ($repositories as $repository) {
-            $data['repositories'][] = array(
+            $data[] = array(
                 'name'          =>  $repository->getName(),
-                'factoryName'  =>  $repository->getFactory()->getName()
+                'factoryName'   =>  $repository->getFactory()->getName(),
+                'support'       =>  $repository->getFactory()->getSupportedOperations()
+
             );
         }
 
-        return $app->json($data);
+        return $this->jsonCache($app, $data, 60);
     }
 
     public function getRepositoryAction(SessionManager $repository, Application $app)
     {
         $data = array(
-            'repository'    =>  array(
-                'name'          =>  $repository->getName(),
-                'factoryName'  =>  $repository->getFactory()->getName()
-            )
+            'name'          =>  $repository->getName(),
+            'factoryName'  =>  $repository->getFactory()->getName(),
+            'support'       =>  $repository->getFactory()->getSupportedOperations()
         );
 
-        return $app->json($data);
+        return $this->jsonCache($app, $data, 60);
     }
 
     public function getWorkspacesAction(SessionManager $repository, Application $app, Request $request)
     {
         $repositorySupport = $repository->getFactory()->getSupportedOperations();
-        $workspaceSupport = array();
 
-        foreach ($repositorySupport as $support) {
-            if (substr($support, 0, strlen('workspace.')) == 'workspace.') {
-                $workspaceSupport[] = $support;
-            }
-        }
-
-        $data = array(
-            'workspaces' => array(),
-            'support'    => $workspaceSupport
-        );
+        $data = array();
 
         foreach ($repository->getWorkspaceManager()->getAccessibleWorkspaceNames() as $workspaceName) {
-            $data['workspaces'][$workspaceName] = array(
+            $data[$workspaceName] = array(
                 'name'      =>  $workspaceName
             );
         }
-        ksort($data['workspaces']);
-        $data['workspaces'] = array_values($data['workspaces']);
+        ksort($data);
+        $data = array_values($data);
 
-        if ($request->query->has('repositories')) {
-            $data['repositories'] = array_keys($app['phpcr_api.repository_loader']->getRepositories()->getAll());
-        }
-
-        return $app->json($data);
+        return $this->jsonCache($app, $data, 60);
     }
 
     public function getWorkspaceAction(SessionManager $repository, $workspace, Application $app)
     {
-        $repositorySupport = $repository->getFactory()->getSupportedOperations();
-        $workspaceSupport = array();
-
-        foreach ($repositorySupport as $support) {
-            if (substr($support, 0, strlen('workspace.')) == 'workspace.') {
-                $workspaceSupport[] = $support;
-            }
-        }
-
         $data = array(
-            'workspace' => array(
-                'name'  =>  $workspace
-            ),
-            'support'    => $workspaceSupport
+            'name'  =>  $workspace
         );
 
-        return $app->json($data);
+        return $this->jsonCache($app, $data, 60);
     }
 
     public function getNodeAction(SessionManager $repository, $workspace, $path, Application $app, Request $request)
@@ -220,33 +218,21 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             throw new ResourceNotFoundException('Unknown node');
         }
 
-        $repositorySupport = $repository->getFactory()->getSupportedOperations();
-        $nodeSupport = array();
-
-        foreach ($repositorySupport as $support) {
-            if (substr($support, 0, strlen('node.')) == 'node.') {
-                $nodeSupport[] = $support;
-            }
-        }
-
-        $data = array(
-            'support'   =>  $nodeSupport,
-            'node'      =>  array()
-        );
+        $data = array();
 
         $currentNode = $repository->getNode($path);
 
         if ($request->query->has('reducedTree')) {
-            $data['node']['reducedTree'] = $currentNode->getReducedTree();
+            $data['reducedTree'] = $currentNode->getReducedTree();
         }
 
-        $data['node']['name'] = $currentNode->getName();
-        $data['node']['path'] = $currentNode->getPath();
-        $data['node']['repository'] = $repository->getName();
-        $data['node']['workspace'] = $workspace;
-        $data['node']['children'] = array();
+        $data['name'] = $currentNode->getName();
+        $data['path'] = $currentNode->getPath();
+        $data['repository'] = $repository->getName();
+        $data['workspace'] = $workspace;
+        $data['children'] = array();
         foreach ($currentNode->getChildren() as $node) {
-            $data['node']['children'][] = array(
+            $data['children'][] = array(
                 'name'          =>  $node->getName(),
                 'path'          =>  $node->getPath(),
                 'children'      =>  array(),
@@ -254,21 +240,14 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
             );
         }
 
-        $data['node']['hasChildren'] = (count($data['node']['children']) > 0);
+        $data['hasChildren'] = (count($data['children']) > 0);
 
         if ($currentNode->getPath() != $repository->getRootNode()->getPath()) {
-            $data['node']['parent'] = $currentNode->getParent()->getName();
+            $data['parent'] = $currentNode->getParent()->getName();
         }
-        $data['node']['nodeProperties'] = $currentNode->getPropertiesToArray();
+        $data['properties'] = $currentNode->getPropertiesToArray();
 
-        if ($request->query->has('repositories')) {
-            $data['repositories'] = array_keys($app['phpcr_api.repository_loader']->getRepositories()->getAll());
-        }
-
-        if ($request->query->has('workspaces')) {
-            $data['workspaces'] = $repository->getWorkspaceManager()->getAccessibleWorkspaceNames();
-        }
-        return $app->json($data);
+        return $this->jsonCache($app, $data, 60);
     }
 
     public function createWorkspaceAction(SessionManager $repository, Application $app, Request $request)
@@ -305,9 +284,82 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         $name = $request->request->get('name',null);
         $value = $request->request->get('value',null);
         $type = $request->request->get('type',null);
+        $properties = $currentNode->getPropertiesToArray();
+
+        if (is_array($properties[$name]['value'])) {
+            $json = json_decode($value, true);
+            if (!is_null($json) && $json !== false) {
+                $value = $json;
+            }
+        }
 
         $currentNode->setProperty($name, $value, $type);
 
         return $app->json(sprintf('Property %s added', $name));
+    }
+
+    public function updateNodeAction(SessionManager $repository, $workspace, $path, Application $app, Request $request)
+    {
+        if (!$repository->nodeExists($path)) {
+            throw new ResourceNotFoundException('Unknown node');
+        }
+
+        $currentNode = $repository->getNode($path);
+
+        $method = $request->query->get('method',null);
+        $output = sprintf('Node %s updated', $path);
+
+        switch($method){
+            default:
+                throw new NotSupportedOperationException('Unknown edit method');
+                break;
+
+            case 'rename':
+                $name = $request->query->get('newName', null);
+                $currentNode->rename($name);
+                $output = sprintf('Node %s renamed', $path);
+                break;
+
+            case 'move':
+                $destAbsPath = $request->query->get('destAbsPath', null);
+                $repository->move($path, $destAbsPath);
+                $output = sprintf('Node %s moved', $path);
+                break;
+        }
+
+        return $app->json($output);
+    }
+
+    public function deleteNodeAction(SessionManager $repository, $workspace, $path, Application $app, Request $request)
+    {
+        if (!$repository->nodeExists($path)) {
+            throw new ResourceNotFoundException('Unknown node');
+        }
+
+        $currentNode = $repository->getNode($path);
+        $currentNode->remove();
+
+        return $app->json(sprintf('Node %s removed', $path));
+    }
+
+    public function addNodeAction(SessionManager $repository, $workspace, $path, Application $app, Request $request)
+    {
+        if (!$repository->nodeExists($path)) {
+            throw new ResourceNotFoundException('Unknown node');
+        }
+
+        $currentNode = $repository->getNode($path);
+
+        $relPath = $request->request->get('relPath',null);
+        $primaryNodeTypeName = $request->request->get('primaryNodeTypeName', null);
+
+        $currentNode->addNode($relPath, $primaryNodeTypeName);
+
+        return $app->json(sprintf('Node %s added to %s', $relPath, $path));
+    }
+
+    private function jsonCache(Application $app, $json, $max = 60)
+    {
+        return $app->json($json, 200, array('Cache-Control' => sprintf('s-maxage=%s, public, must-revalidate', $max)));
     }
 }
