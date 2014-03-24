@@ -247,6 +247,18 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         }
         $data['properties'] = $currentNode->getPropertiesToArray();
 
+        foreach ($data['properties'] as $name=>$property) {
+            if ($property['type'] === \PHPCR\PropertyType::WEAKREFERENCE) {
+                if (is_array($property['value'])) {
+                    foreach ($property['value'] as $subkey=>$subvalue) {
+                        $data['properties'][$name]['value'][$subkey] = $repository->getNodeByIdentifier($subkey)->getPath();
+                    }
+                } else {
+                    $data['properties'][$name]['value'] = $repository->getNodeByIdentifier($property['value'])->getPath();
+                }
+            }
+        }
+
         return $this->jsonCache($app, $data, 60);
     }
 
