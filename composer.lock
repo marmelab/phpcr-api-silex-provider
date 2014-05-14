@@ -129,12 +129,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/marmelab/phpcr-api.git",
-                "reference": "4647509d647a8f15be9a5325eab5f0794c32c759"
+                "reference": "1ee1fe1bcf5bf488801cb843e54d3cc715434a37"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/marmelab/phpcr-api/zipball/4647509d647a8f15be9a5325eab5f0794c32c759",
-                "reference": "4647509d647a8f15be9a5325eab5f0794c32c759",
+                "url": "https://api.github.com/repos/marmelab/phpcr-api/zipball/1ee1fe1bcf5bf488801cb843e54d3cc715434a37",
+                "reference": "1ee1fe1bcf5bf488801cb843e54d3cc715434a37",
                 "shasum": ""
             },
             "require": {
@@ -153,7 +153,7 @@
                 "MIT"
             ],
             "description": "PHPCR API provides an API to explore PHPCR repositories.",
-            "time": "2014-03-31 16:15:31"
+            "time": "2014-05-14 21:47:16"
         },
         {
             "name": "phpcr/phpcr",
