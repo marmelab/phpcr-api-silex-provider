@@ -236,11 +236,11 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
                 'name'          =>  $node->getName(),
                 'path'          =>  $node->getPath(),
                 'children'      =>  array(),
-                'hasChildren'   =>  (count($node->getChildren()) > 0)
+                'hasChildren'   =>  $node->hasChildren()
             );
         }
 
-        $data['hasChildren'] = (count($data['children']) > 0);
+        $data['hasChildren'] = $currentNode->hasChildren();
 
         if ($currentNode->getPath() != $repository->getRootNode()->getPath()) {
             $data['parent'] = $currentNode->getParent()->getName();
@@ -372,6 +372,6 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
 
     private function jsonCache(Application $app, $json, $max = 60)
     {
-        return $app->json($json, 200, array('Cache-Control' => sprintf('s-maxage=%s, public, must-revalidate', $max)));
+        return $app->json($json, 200, array('Cache-Control' => sprintf('s-maxage=%s, private, must-revalidate', $max)));
     }
 }
