@@ -10,6 +10,7 @@ use PHPCRAPI\API\Manager\SessionManager;
 use PHPCRAPI\API\RepositoryLoader;
 use PHPCRAPI\PHPCR\Exception\CollectionUnknownKeyException;
 use Silex\Application;
+use Silex\Provider\DoctrineServiceProvider;
 use Silex\ServiceProviderInterface;
 use Silex\ControllerProviderInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -147,7 +148,32 @@ class APIServiceProvider implements ServiceProviderInterface, ControllerProvider
         $app->mount($app['phpcr_api.mount_prefix'], $this->connect($app));
 
         $app['phpcr_api.repository_loader'] = $app->share(function () use ($app) {
-            return new RepositoryLoader($app['phpcr_api.repositories_config']);
+
+            $repositoriesConfig = $app['phpcr_api.repositories_config'];
+            $dbOptions = array();
+
+            foreach ($repositoriesConfig as $name => $config) {
+                if ('jackalope.doctrine-dbal' !== $config['factory']
+                    || empty($config['parameters']['doctrine_dbal.config'])
+                ) {
+                    continue;
+                }
+
+                $dbOptions[$name] = $config['parameters']['doctrine_dbal.config'];
+                unset($repositoriesConfig[$name]['parameters']['doctrine_dbal.config']);
+            }
+
+            if (!empty($dbOptions)) {
+                $app->register(new DoctrineServiceProvider(), array(
+                    'dbs.options' => $dbOptions,
+                ));
+
+                foreach ($dbOptions as $name => $config) {
+                    $repositoriesConfig[$name]['parameters']['jackalope.doctrine_dbal_connection'] = $app['dbs'][$name];
+                }
+            }
+
+            return new RepositoryLoader($repositoriesConfig);
         });
 
         $app->before(function (Request $request) {

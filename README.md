@@ -27,6 +27,17 @@ $repositoriesConfig = array(
             'credentials.username' => 'admin',
             'credentials.password' => 'admin'
         )
+    ),
+    'Repository Test2' => array(
+        'factory' => 'jackalope.doctrine-dbal',
+        'parameters' => array(
+            'doctrine_dbal.config' => array(
+                'driver' => 'pdo_sqlite',
+                'path' => '../src/app.db',
+            ),
+            'credentials.username' => 'admin',
+            'credentials.password' => 'admin'
+        )
     )
 );
 

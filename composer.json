@@ -2,14 +2,25 @@
     "name": "marmelab/phpcr-api-silex-provider",
     "description": "PHPCR API Silex Provider exposes in REST marmelab/phpcr-api",
     "license": "MIT",
-    "version": "1.0.0",
     "require": {
-        "silex/silex": "1.1.2",
-        "symfony/browser-kit": "2.4.4",
-	"marmelab/phpcr-api": "1.0.0"
+        "silex/silex": "~1.1",
+        "symfony/browser-kit": "~2.4",
+        "marmelab/phpcr-api": "1.1.*"
     },
-
+    "require-dev": {
+        "jackalope/jackalope-jackrabbit": "1.1.*",
+        "jackalope/jackalope-doctrine-dbal": "1.1.*"
+    },
+    "suggest": {
+        "jackalope/jackalope-jackrabbit": "To connect to a Jackrabbit content repository, 1.1.*",
+        "jackalope/jackalope-doctrine-dbal": "To connect to a Doctrine DBAL content repository, 1.1.*"
+    },
     "autoload": {
         "psr-0": {"PHPCRAPI\\": "src/"}
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.1-dev"
+        }
     }
 }
