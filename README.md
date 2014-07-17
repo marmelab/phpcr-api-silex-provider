@@ -43,7 +43,7 @@ $repositoriesConfig = array(
 
 $app->register(new \PHPCRAPI\Silex\ApiServiceProvider(),array(
     'phpcr_api.repositories_config' =>  $repositoriesConfig,
-    'phpcr_api.mount_prefix'    =>  '/_api'
+    'phpcr_api.mount_prefix'    =>  '/api'
 ));
 ```
 
