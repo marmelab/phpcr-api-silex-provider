@@ -18,12 +18,14 @@ class RepositoryHandlerTest extends \PHPUnit_Framework_TestCase
         $factory = $this->mock('\PHPCRAPI\PHPCR\Factory')
             ->getName('test')
             ->getSupportedOperations(['read', 'write'])
-            ->new();
+            ->new()
+        ;
 
         $repository = $this->mock('\PHPCRAPI\API\Manager\SessionManager')
             ->getName('repository_test')
             ->getFactory($factory)
-            ->new();
+            ->new()
+        ;
 
         $serialized = $handler->serializeRepositoryToJson($jsonSerializationVisitor, $repository, [], $context);
 
