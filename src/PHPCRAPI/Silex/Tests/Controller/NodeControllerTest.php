@@ -166,5 +166,117 @@ class NodeControllerTest extends AbstractWebTestCase
         $json = json_decode($client->getResponse()->getContent(), true);
 
         $this->assertEquals('Property deleted', $json['message']);
+
+        return $data['nodePath'];
+    }
+
+    /**
+     * @depends testItShouldDeleteAPropertyWhenADeleteRequestIsSentToANodePropertyUrl
+     */
+    public function testItShouldRenameANodeWhenAPutRequestIsSentToANodeUrlWithRenameAsMethod($nodePath)
+    {
+        $client = $this->createClient();
+
+        $newName = uniqid('Nd');
+
+        $crawler = $client->request(
+            'PUT',
+            sprintf('/api/repositories/repository_test/workspaces/default/nodes%s', $nodePath),
+            [
+                'method'  => 'rename',
+                'newName' => $newName
+            ]
+        );
+
+        $this->assertEquals(201, $client->getResponse()->getStatusCode());
+
+        // Compile nodePath with the newName
+        $nodePath = explode('/', $nodePath);
+        $nodePath[count($nodePath) - 1] = $newName;
+        $nodePath = implode('/', $nodePath);
+
+        $this->assertEquals(sprintf('/api/repositories/repository_test/workspaces/default/nodes%s', $nodePath), $client->getResponse()->getTargetUrl());
+
+        $crawler = $client->request(
+            'GET',
+            $client->getResponse()->getTargetUrl()
+        );
+
+        $this->assertTrue($client->getResponse()->isOk());
+
+        $json = json_decode($client->getResponse()->getContent(), true);
+        $node = $json['message'];
+
+        $this->assertEquals($newName, $node['name']);
+
+        return $nodePath;
+    }
+
+    /**
+     * @depends testItShouldRenameANodeWhenAPutRequestIsSentToANodeUrlWithRenameAsMethod
+     */
+    public function testItShouldMoveANodeWhenAPutRequestIsSentToANodeUrlWithMoveAsMethod($nodePath)
+    {
+        $client = $this->createClient();
+
+
+        $relPath = uniqid('Nd');
+        $crawler = $client->request(
+            'POST',
+            sprintf('/api/repositories/repository_test/workspaces/default/nodes%s', $nodePath),
+            [
+                'relPath' =>  $relPath
+            ]
+        );
+
+        $crawler = $client->request(
+            'GET',
+            $client->getResponse()->getTargetUrl()
+        );
+
+        $this->assertTrue($client->getResponse()->isOk());
+
+        $json = json_decode($client->getResponse()->getContent(), true);
+        $node = $json['message'];
+
+        // $node is here a child node of the node at $nodePath
+
+        $crawler = $client->request(
+            'PUT',
+            sprintf('/api/repositories/repository_test/workspaces/default/nodes%s', $node['path']),
+            [
+                'method'      => 'move',
+                'destAbsPath' => '/' . $node['name']
+            ]
+        );
+
+        $this->assertEquals(201, $client->getResponse()->getStatusCode());
+
+        $this->assertEquals(sprintf('/api/repositories/repository_test/workspaces/default/nodes%s', '/' . $node['name']), $client->getResponse()->getTargetUrl());
+
+        $crawler = $client->request(
+            'GET',
+            $client->getResponse()->getTargetUrl()
+        );
+
+        $this->assertTrue($client->getResponse()->isOk());
+
+        $json = json_decode($client->getResponse()->getContent(), true);
+        $movedNode = $json['message'];
+
+        $this->assertEquals('/' . $node['name'], $movedNode['path']);
+
+
+        // If the method does not exists
+        $crawler = $client->request(
+            'PUT',
+            '/api/repositories/repository_test/workspaces/default/nodes/',
+            [
+                'method'      => 'unknownmethod',
+                'destAbsPath' => '/' . $node['name']
+            ]
+        );
+
+        $this->assertEquals(424, $client->getResponse()->getStatusCode());
     }
 }

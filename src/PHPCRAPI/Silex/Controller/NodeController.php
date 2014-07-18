@@ -6,6 +6,7 @@ use PHPCRAPI\Silex\AbstractController;
 use PHPCRAPI\Silex\SerializationContext\NodeContext;
 use PHPCRAPI\API\Manager\SessionManager;
 use PHPCRAPI\API\Exception\ResourceNotFoundException;
+use PHPCRAPI\API\Exception\NotSupportedOperationException;
 use Symfony\Component\HttpFoundation\Request;
 
 class NodeController extends AbstractController
@@ -86,12 +87,16 @@ class NodeController extends AbstractController
                 break;
 
             case 'rename':
-                $name = $request->query->get('newName', null);
-                $currentNode->rename($name);
+                if (!$newName = $request->request->get('newName')) {
+                    $this->app->abort(400, 'Missing parameters');
+                }
+                $currentNode->rename($newName);
                 break;
 
             case 'move':
-                $destAbsPath = $request->query->get('destAbsPath', null);
+                if (!$destAbsPath = $request->request->get('destAbsPath')) {
+                    $this->app->abort(400, 'Missing parameters');
+                }
                 $repository->move($path, $destAbsPath);
                 break;
         }
