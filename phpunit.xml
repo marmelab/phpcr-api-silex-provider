@@ -8,14 +8,14 @@
     convertErrorsToExceptions   = "false"
     convertNoticesToExceptions  = "true"
     convertWarningsToExceptions = "true"
-    processIsolation            = "true"
+    processIsolation            = "false"
     stopOnFailure               = "false"
     syntaxCheck                 = "false"
     bootstrap                   = "vendor/autoload.php" >
 
     <testsuites>
         <testsuite name="PHPCR API Silex Provider Test Suite">
-            <directory>tests/PHPCRAPI/Tests</directory>
+            <directory>src/PHPCRAPI/Silex/Tests/*</directory>
         </testsuite>
     </testsuites>
 </phpunit>
