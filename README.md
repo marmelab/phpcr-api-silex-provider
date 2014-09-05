@@ -1,5 +1,4 @@
-PHPCR API Silex Provider
-========================
+# PHPCR API Silex Provider [![Build Status](https://travis-ci.org/marmelab/phpcr-api-silex-provider.svg?branch=master)](https://travis-ci.org/marmelab/phpcr-api-silex-provider)
 
 PHPCR API Silex Provider provides a REST access to [marmelab/phpcr-api](https://github.com/marmelab/phpcr-api).
 
