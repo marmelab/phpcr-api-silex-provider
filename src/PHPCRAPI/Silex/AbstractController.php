@@ -50,12 +50,6 @@ abstract class AbstractController
     {
         $headers['Content-Type'] = 'application/json';
 
-        return new Response(
-            $content,
-            200,
-            [
-                'Content-Type' => 'application/json',
-            ]
-        );
+        return new Response($content, $statusCode, $headers);
     }
 }
