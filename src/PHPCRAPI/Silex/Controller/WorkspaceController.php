@@ -34,7 +34,7 @@ class WorkspaceController extends AbstractController
 
     public function createWorkspaceAction(SessionManager $repository, Request $request)
     {
-        if (!$name = $request->request->get('name')) {
+        if (($name = $request->request->get('name')) === null) {
             $this->app->abort(400, 'Missing parameters');
         }
 

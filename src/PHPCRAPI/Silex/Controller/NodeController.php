@@ -43,11 +43,11 @@ class NodeController extends AbstractController
         $name  = $request->request->get('name');
         $value = $request->request->get('value');
 
-        if (!$name || !$value) {
+        if ($name === null || $value === null) {
             $this->app->abort(400, 'Missing parameters');
         }
 
-        $type  = $request->request->get('type',null);
+        $type  = $request->request->get('type', null);
         $properties = $currentNode->getPropertiesAsArray();
 
         if (array_key_exists($name, $properties) && is_array($properties[$name]['value'])) {
@@ -77,7 +77,7 @@ class NodeController extends AbstractController
 
         $currentNode = $repository->getNode($path);
 
-        if (!$method = $request->request->get('method')) {
+        if (($method = $request->request->get('method')) === null) {
             $this->app->abort(400, 'Missing parameters');
         }
 
@@ -131,7 +131,7 @@ class NodeController extends AbstractController
 
         $currentNode = $repository->getNode($path);
 
-        if (!$relPath = $request->request->get('relPath')) {
+        if (($relPath = $request->request->get('relPath')) === null) {
             $this->app->abort(400, 'Missing parameters');
         }
 
